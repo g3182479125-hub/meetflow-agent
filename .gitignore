@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Test / cache
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime data
+data/
+reports/
+*.db
+*.sqlite
+*.sqlite3
+
+# Audio / large local files
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.mp4
+*.mov
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker / logs
+*.log
+logs/
