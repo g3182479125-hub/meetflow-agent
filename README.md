@@ -1,25 +1,23 @@
-# MeetFlow Agent
+﻿# MeetFlow Agent - 多 Agent 智能会议助手
 
-MeetFlow Agent is a Python-based multi-agent meeting assistant built with FastAPI, LangGraph, WhisperX, and LLM APIs. It turns meeting audio into structured transcripts, meeting summaries, action items, insights, and follow-up reports.
+MeetFlow Agent 是一个基于 Python 的多 Agent 智能会议助手，使用 FastAPI、LangGraph、WhisperX 和大模型 API 构建。系统可以把会议音频转成结构化转写文本，并自动生成会议纪要、行动项、会议洞察和会后跟进报告。
 
-The project focuses on enterprise meeting automation: from meeting recording to task tracking, report delivery, and knowledge reuse.
+这个项目面向企业会议自动化场景，目标是把“会议记录”进一步转化为“任务跟进、报告推送和知识沉淀”。
 
-## Features
+## 核心功能
 
-- Audio upload through REST API and real-time meeting connection through WebSocket.
-- Speech-to-text transcription with WhisperX.
-- Optional speaker diarization with pyannote-audio.
-- Structured meeting summary generation with an LLM.
-- Action item extraction with assignee, task, deadline, priority, and context.
-- Meeting insight analysis, including speaker statistics, sentiment, keywords, highlights, and suggestions.
-- Follow-up report generation for post-meeting delivery.
-- Optional Jira issue creation and Feishu task/message integration.
-- Optional SMTP email delivery for meeting reports.
-- ChromaDB-based meeting knowledge storage for future retrieval and reuse.
+- 音频接入：支持通过 REST API 上传会议音频，也支持通过 WebSocket 接入实时会议流。
+- 语音转写：使用 WhisperX 完成语音转文字和时间戳对齐。
+- 说话人识别：可接入 pyannote-audio，对不同发言人进行区分。
+- 会议纪要：Summary Agent 根据转写文本生成议题、讨论要点、结论、决策和下一步计划。
+- 行动项提取：Action Agent 自动提取负责人、任务内容、截止时间、优先级和上下文。
+- 会议洞察：Insight Agent 输出发言统计、整体情绪、关键词、会议亮点和改进建议。
+- 会后跟进：Follow-up Agent 汇总结果，生成会议报告，并支持推送到 Jira、飞书和邮件。
+- 知识沉淀：通过 ChromaDB 存储会议摘要、行动项和洞察内容，方便后续检索和复用。
 
-## Architecture
+## 系统架构
 
-MeetFlow Agent uses LangGraph to split the meeting workflow into five agent nodes.
+系统使用 LangGraph 将会议处理流程拆成 5 个 Agent 节点：
 
 ```text
 START
@@ -38,52 +36,52 @@ Follow-up Agent
 END
 ```
 
-Workflow overview:
+流程说明：
 
-1. Transcription Agent converts meeting audio into timestamped transcript segments.
-2. Summary Agent, Action Agent, and Insight Agent run after transcription and handle different analysis tasks.
-3. Follow-up Agent merges the outputs and generates a meeting report.
-4. Optional integrations push action items and reports to Jira, Feishu, email, and ChromaDB.
+1. Transcription Agent 先把音频转换成带时间戳、发言人和置信度的转写结果。
+2. Summary Agent、Action Agent 和 Insight Agent 在转写完成后并行执行，分别负责摘要、待办和洞察。
+3. Follow-up Agent 汇总三个并行节点的结果，生成完整会议报告。
+4. 如果配置了外部系统，系统会把待办和报告同步到 Jira、飞书、邮件和 ChromaDB。
 
-This design avoids putting all logic into a single prompt. Each node has a clear responsibility, which makes the system easier to debug, extend, and evaluate.
+这种设计避免把所有逻辑塞进一个大 Prompt，每个节点职责清晰，方便调试、扩展和评估。
 
-## Tech Stack
+## 技术栈
 
-| Area | Technology |
+| 模块 | 技术 |
 | --- | --- |
-| Web service | FastAPI, Uvicorn, WebSocket |
-| Agent orchestration | LangGraph, LangChain |
-| Speech-to-text | WhisperX, faster-whisper, pyannote-audio, torch |
-| LLM client | MiniMax API / OpenAI-compatible API |
-| Data models | Pydantic |
-| Vector storage | ChromaDB |
-| Enterprise integrations | Jira Cloud API, Feishu Open API, SMTP Email |
-| Engineering | Docker, Docker Compose, pytest, loguru, tenacity |
+| Web 服务 | FastAPI、Uvicorn、WebSocket |
+| Agent 编排 | LangGraph、LangChain |
+| 语音转写 | WhisperX、faster-whisper、pyannote-audio、torch |
+| 大模型调用 | MiniMax API / OpenAI-compatible API |
+| 数据建模 | Pydantic |
+| 向量存储 | ChromaDB |
+| 企业集成 | Jira Cloud API、飞书 Open API、SMTP Email |
+| 工程化 | Docker、Docker Compose、pytest、loguru、tenacity |
 
-## Project Structure
+## 项目结构
 
 ```text
 .
 |-- src/
 |   |-- agents/
-|   |   |-- transcription_agent.py
-|   |   |-- summary_agent.py
-|   |   |-- action_agent.py
-|   |   |-- insight_agent.py
-|   |   `-- followup_agent.py
+|   |   |-- transcription_agent.py   # 语音转写 Agent
+|   |   |-- summary_agent.py         # 会议纪要 Agent
+|   |   |-- action_agent.py          # 行动项提取 Agent
+|   |   |-- insight_agent.py         # 会议洞察 Agent
+|   |   `-- followup_agent.py        # 会后跟进 Agent
 |   |-- graph/
-|   |   `-- meeting_graph.py
+|   |   `-- meeting_graph.py         # LangGraph 编排核心
 |   |-- integrations/
-|   |   |-- minimax_client.py
-|   |   |-- jira_client.py
-|   |   |-- feishu_client.py
-|   |   |-- email_client.py
-|   |   `-- chroma_client.py
+|   |   |-- minimax_client.py        # 大模型客户端
+|   |   |-- jira_client.py           # Jira 集成
+|   |   |-- feishu_client.py         # 飞书集成
+|   |   |-- email_client.py          # 邮件发送
+|   |   `-- chroma_client.py         # ChromaDB 向量库
 |   |-- models/
-|   |   `-- schemas.py
+|   |   `-- schemas.py               # Pydantic 数据结构
 |   |-- websocket/
-|   |   `-- server.py
-|   `-- main.py
+|   |   `-- server.py                # FastAPI / WebSocket 接口
+|   `-- main.py                      # 服务入口
 |-- requirements.txt
 |-- Dockerfile
 |-- docker-compose.yml
@@ -91,31 +89,31 @@ This design avoids putting all logic into a single prompt. Each node has a clear
 `-- README.md
 ```
 
-## Local Setup
+## 本地部署
 
-### 1. Requirements
+### 1. 环境要求
 
-Recommended environment:
+建议环境：
 
 - Python 3.11+
 - FFmpeg
-- Optional: Docker and Docker Compose
-- Optional: NVIDIA GPU for faster WhisperX inference
+- 可选：Docker 和 Docker Compose
+- 可选：NVIDIA GPU，用于提升 WhisperX 推理速度
 
-Speaker diarization requires a Hugging Face token and access to the related pyannote models.
+如果需要真实说话人识别，需要准备 Hugging Face Token，并确保可以访问 pyannote 相关模型。
 
-### 2. Install Dependencies
+### 2. 安装依赖
 
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
-cd <your-project-path>
+cd <你的项目路径>
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Linux / macOS:
+Linux / macOS：
 
 ```bash
 cd /path/to/meetflow-agent
@@ -124,21 +122,21 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
+### 3. 配置环境变量
 
-Copy the template:
+复制模板文件：
 
 ```bash
 cp .env.example .env
 ```
 
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Common configuration:
+常用配置如下：
 
 ```env
 MINIMAX_API_KEY=your_minimax_api_key
@@ -157,71 +155,71 @@ SMTP_PASSWORD=your_password
 SMTP_FROM=your_email
 ```
 
-For demo mode, external integrations are optional. If Jira, Feishu, email, or Hugging Face are not configured, the core demo workflow can still run.
+如果只跑 demo 模式，Jira、飞书、邮件和 Hugging Face 都可以先不配置。未配置的外部集成会自动跳过，不影响核心演示流程。
 
-### 4. Start the Server
+### 4. 启动服务
 
 ```bash
 python -m src.main
 ```
 
-Or start with Uvicorn:
+也可以直接用 Uvicorn 启动：
 
 ```bash
 uvicorn src.websocket.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open the API documentation:
+启动后访问：
 
 ```text
 http://localhost:8000/docs
 ```
 
-Health check:
+健康检查：
 
 ```text
 http://localhost:8000/
 ```
 
-## Docker Setup
+## Docker 启动
 
 ```bash
 docker compose up -d --build
 ```
 
-The Docker Compose file includes:
+Docker Compose 中包含：
 
-- `meeting-assistant`: FastAPI service
-- `postgres`: optional relational database service
-- `redis`: optional cache / queue service
+- meeting-assistant：FastAPI 服务
+- postgres：可选关系型数据库
+- redis：可选缓存 / 队列服务
 
-The current core workflow can run without PostgreSQL and Redis. In production, meeting records, task status, and execution logs should be persisted to a database.
+当前核心流程可以在不配置 PostgreSQL 和 Redis 的情况下运行。生产环境建议将会议记录、任务状态和执行日志持久化到数据库。
 
-## API Examples
+## API 示例
 
-### Health Check
+### 健康检查
 
 ```bash
 curl http://localhost:8000/
 ```
 
-### Create a Meeting
+### 创建会议
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/meeting/start \
   -H "Content-Type: application/json" \
-  -d '{"title":"Q3 Budget Review","participants":["Alice","Bob"],"language":"zh"}'
+  -d '{"title":"Q3预算评审会议","participants":["张总","李明"],"language":"zh"}'
 ```
 
-### Run Demo Mode
+### 运行演示模式
 
-Demo mode uses a built-in transcript and does not require an audio file.
+演示模式使用内置会议文本，不需要上传音频。
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/meeting/demo/demo
 ```
 
-### Upload Audio
+### 上传音频
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/meeting/{meeting_id}/upload" \
@@ -229,7 +227,7 @@ curl -X POST "http://localhost:8000/api/v1/meeting/{meeting_id}/upload" \
   -F "language=zh"
 ```
 
-Supported audio formats:
+支持的音频格式：
 
 - `.wav`
 - `.mp3`
@@ -237,7 +235,7 @@ Supported audio formats:
 - `.flac`
 - `.ogg`
 
-### Query Results
+### 查询结果
 
 ```bash
 curl http://localhost:8000/api/v1/meeting/demo/summary
@@ -246,15 +244,15 @@ curl http://localhost:8000/api/v1/meeting/demo/insights
 curl http://localhost:8000/api/v1/meeting/demo/report
 ```
 
-## WebSocket Protocol
+## WebSocket 协议
 
-Endpoint:
+连接地址：
 
 ```text
 ws://localhost:8000/ws/meeting/{meeting_id}
 ```
 
-Client messages:
+客户端消息：
 
 ```json
 {"type":"start"}
@@ -272,7 +270,7 @@ Client messages:
 {"type":"ping"}
 ```
 
-Server event types:
+服务端事件类型：
 
 - `connected`
 - `recording`
@@ -285,37 +283,37 @@ Server event types:
 - `completed`
 - `error`
 
-## Testing
+## 测试
 
 ```bash
 pytest src/tests -q
 ```
 
-Current tests cover:
+当前测试主要覆盖：
 
-- ChromaDB meeting storage
-- Email client behavior
-- Follow-up agent integration with email and vector storage
+- ChromaDB 会议存储逻辑
+- EmailClient 邮件发送逻辑
+- Follow-up Agent 与邮件、向量库的集成逻辑
 
-## Engineering Highlights
+## 工程亮点
 
-- LangGraph-based multi-agent workflow instead of a single prompt chain.
-- Fan-out/Fan-in design for summary, action extraction, and insight analysis.
-- Pydantic models for stable state exchange between agents.
-- Retry support for external API calls through Tenacity.
-- Graceful degradation when optional enterprise integrations are not configured.
-- ChromaDB storage for meeting knowledge reuse.
+- 使用 LangGraph 编排多 Agent 流程，而不是单一 Prompt Chain。
+- 使用 Fan-out/Fan-in 结构并行处理会议摘要、行动项和会议洞察。
+- 使用 Pydantic 统一 Agent 之间传递的数据结构。
+- 使用 Tenacity 为外部 API 调用提供重试机制。
+- 外部系统未配置时自动降级，不影响核心会议分析流程。
+- 使用 ChromaDB 沉淀会议知识，为后续历史会议检索和知识复用打基础。
 
-## Notes
+## 注意事项
 
-- WhisperX and pyannote-audio are heavy dependencies. The first installation and model download may take time.
-- CPU inference works but can be slow. GPU is recommended for real meeting audio.
-- Jira, Feishu, SMTP, and Hugging Face are optional for demo usage.
-- `.env`, virtual environments, local cache, runtime data, and audio files are ignored by Git.
+- WhisperX 和 pyannote-audio 依赖较重，首次安装和模型下载会比较慢。
+- CPU 可以运行，但真实音频转写速度会比较慢，建议有 GPU 时使用 GPU。
+- Jira、飞书、SMTP、Hugging Face 都是可选配置。
+- `.env`、虚拟环境、本地缓存、运行数据和音频文件不会上传到 GitHub。
 
-## Repository
+## 仓库地址
 
-GitHub: https://github.com/g3182479125-hub/meetflow-agent
+https://github.com/g3182479125-hub/meetflow-agent
 
 ## License
 
